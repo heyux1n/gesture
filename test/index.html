@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    html {
+      width: 100%;
+      height: 100%;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      /* 禁用所有边界弹性效果 */
+      overscroll-behavior: none;
+
+      /* 禁用手势缩放、手势滑动 */
+      touch-action: none;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="content" style="width: 180%;height: 180%;background-color: azure;">
+    <div id="child" style="width: 200px;height: 200px;background-color: bisque;"></div>
+  </div>
+
+</body>
+
+<script>
+  let content = document.getElementById('content')
+
+  addPointerEvent(content)
+  // addTouchEvent(content)
+  // addMouseEvent(content)
+
+  /**
+ * pointer 事件通用属性：
+ * pointerId: 唯一标识触发事件的指针。
+ * pointerType: 指针设备的类型（"mouse"、"pen" 或 "touch"）。
+ * isPrimary: 指针是否是主指针（例如，第一个触摸点）。
+ * clientX, clientY: 指针在视口中的坐标。
+ * pageX, pageY: 指针在页面中的坐标。
+ * screenX, screenY: 指针在屏幕中的坐标。
+ * offsetX, offsetY: 指针在目标元素中的坐标。
+ * button: 按下的鼠标按钮（0: 主按钮，1: 中键，2: 右键）。
+ * buttons: 按下的鼠标按钮的位掩码。
+ * ctrlKey, shiftKey, altKey, metaKey: 是否按下了 Ctrl、Shift、Alt 或 Meta 键。
+ */
+  function addPointerEvent(dom) {
+    dom.addEventListener('pointerdown', e => {
+      console.log('pointerdown 事件 - 指针设备按下 - ', e, ' - pointerId:', e.pointerId, ', pointerType:', e.pointerType);
+    });
+    dom.addEventListener('pointerup', e => {
+      console.log('pointerup 事件 - 指针设备抬起 - ', e, ' - pointerId:', e.pointerId, ', pointerType:', e.pointerType);
+    });
+    dom.addEventListener('pointermove', e => {
+      console.log('pointermove 事件 - 指针设备移动 - ', e, ' - pointerId:', e.pointerId, ', pointerType:', e.pointerType);
+    });
+    dom.addEventListener('pointercancel', e => {
+      // 如手势过程中回到桌面，中断手势操作
+      console.log('pointercancel 事件 - 指针设备交互中断 - ', e, ' - pointerId:', e.pointerId, ', pointerType:', e.pointerType);
+    });
+    dom.addEventListener('pointerover', e => {
+      console.log('pointerover 事件 - 指针设备进入元素边界 - ', e, ' - pointerId:', e.pointerId, ', pointerType:', e.pointerType);
+    });
+    dom.addEventListener('pointerout', e => {
+      console.log('pointerout 事件 - 指针设备离开元素边界 - ', e, ' - pointerId:', e.pointerId, ', pointerType:', e.pointerType);
+    });
+    dom.addEventListener('pointerenter', e => {
+      console.log('pointerenter 事件 - 指针设备进入元素边界（不冒泡） - ', e, ' - pointerId:', e.pointerId, ', pointerType:', e.pointerType);
+    });
+    dom.addEventListener('pointerleave', e => {
+      console.log('pointerleave 事件 - 指针设备离开元素边界（不冒泡） - ', e, ' - pointerId:', e.pointerId, ', pointerType:', e.pointerType);
+    });
+    // pointer 存在一些不同的 event 属性，如 pressure, tiltX, tiltY, twist, width, height
+    // pressure: 压力（例如，触控笔的压力）。
+    // tiltX, tiltY: 触控笔的倾斜角度。
+    // twist: 触控笔的旋转角度。
+    // width, height: 触摸区域的宽度和高度。
+
+    dom.addEventListener('click', e => {
+      console.log('click 事件 - 鼠标单击 - ', e, ' - clientX:', e.clientX, ', clientY:', e.clientY, ', button:', e.button);
+    });
+    dom.addEventListener('dblclick', e => {
+      console.log('dblclick 事件 - 鼠标双击 - ', e, ' - clientX:', e.clientX, ', clientY:', e.clientY, ', button:', e.button);
+    });
+  }
+
+  /**
+   * touch 事件通用属性：
+   * touches: 当前触摸点的 TouchList。
+   * targetTouches: 目标元素上的触摸点的 TouchList。
+   * changedTouches: 发生变化的触摸点的 TouchList。
+   * ctrlKey, shiftKey, altKey, metaKey: 是否按下了 Ctrl、Shift、Alt 或 Meta 键。
+   */
+  function addTouchEvent(dom) {
+    dom.addEventListener('touchstart', e => {
+      console.log('touchstart 事件 - 手指触摸屏幕 - ', e, ' - touches:', e.touches, ', targetTouches:', e.targetTouches, ', changedTouches:', e.changedTouches);
+    });
+    dom.addEventListener('touchend', e => {
+      console.log('touchend 事件 - 手指离开屏幕 - ', e, ' - touches:', e.touches, ', targetTouches:', e.targetTouches, ', changedTouches:', e.changedTouches);
+    });
+    dom.addEventListener('touchmove', e => {
+      console.log('touchmove 事件 - 手指在屏幕上滑动 - ', e, ' - touches:', e.touches, ', targetTouches:', e.targetTouches, ', changedTouches:', e.changedTouches);
+    });
+    dom.addEventListener('touchcancel', e => {
+      console.log('touchcancel 事件 - 触摸事件中断 - ', e, ' - touches:', e.touches, ', targetTouches:', e.targetTouches, ', changedTouches:', e.changedTouches);
+    });
+  }
+
+  /**
+   * mouse 事件通用属性：
+   * clientX, clientY: 鼠标指针在视口中的坐标。
+   * pageX, pageY: 鼠标指针在页面中的坐标。
+   * screenX, screenY: 鼠标指针在屏幕中的坐标。
+   * offsetX, offsetY: 鼠标指针在目标元素中的坐标。
+   * button: 按下的鼠标按钮（0: 主按钮，1: 中键，2: 右键）。
+   * buttons: 按下的鼠标按钮的位掩码。
+   * ctrlKey, shiftKey, altKey, metaKey: 是否按下了 Ctrl、Shift、Alt 或 Meta 键。
+   */
+  function addMouseEvent(dom) {
+    dom.addEventListener('mousedown', e => {
+      console.log('mousedown 事件 - 鼠标按键按下 - ', e, ' - clientX:', e.clientX, ', clientY:', e.clientY, ', button:', e.button);
+    });
+    dom.addEventListener('mouseup', e => {
+      console.log('mouseup 事件 - 鼠标按键抬起 - ', e, ' - clientX:', e.clientX, ', clientY:', e.clientY, ', button:', e.button);
+    });
+    dom.addEventListener('mousemove', e => {
+      console.log('mousemove 事件 - 鼠标移动 - ', e, ' - clientX:', e.clientX, ', clientY:', e.clientY);
+    });
+    dom.addEventListener('mouseover', e => {
+      console.log('mouseover 事件 - 鼠标指针进入元素边界 - ', e, ' - clientX:', e.clientX, ', clientY:', e.clientY);
+    });
+    dom.addEventListener('mouseout', e => {
+      console.log('mouseout 事件 - 鼠标指针离开元素边界 - ', e, ' - clientX:', e.clientX, ', clientY:', e.clientY);
+    });
+    dom.addEventListener('mouseenter', e => {
+      console.log('mouseenter 事件 - 鼠标指针进入元素边界（不冒泡） - ', e, ' - clientX:', e.clientX, ', clientY:', e.clientY);
+    });
+    dom.addEventListener('mouseleave', e => {
+      console.log('mouseleave 事件 - 鼠标指针离开元素边界（不冒泡） - ', e, ' - clientX:', e.clientX, ', clientY:', e.clientY);
+    });
+    dom.addEventListener('click', e => {
+      console.log('click 事件 - 鼠标单击 - ', e, ' - clientX:', e.clientX, ', clientY:', e.clientY, ', button:', e.button);
+    });
+    dom.addEventListener('dblclick', e => {
+      console.log('dblclick 事件 - 鼠标双击 - ', e, ' - clientX:', e.clientX, ', clientY:', e.clientY, ', button:', e.button);
+    });
+    dom.addEventListener('contextmenu', e => {
+      console.log('contextmenu 事件 - 鼠标右键单击 - ', e, ' - clientX:', e.clientX, ', clientY:', e.clientY);
+    });
+  }
+</script>
+
+</html>
