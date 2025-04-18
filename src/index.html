@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    html {
+      width: 100%;
+      height: 100%;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      /* 禁用所有边界弹性效果 */
+      overscroll-behavior: none;
+
+      /* 禁用手势缩放、手势滑动 */
+      touch-action: none;
+    }
+
+    #content {
+      width: 100%;
+      height: 100%;
+      background-image: url('./assets/pdf.png');
+      transform-origin: 0, 0;
+      background-repeat: no-repeat;
+    }
+
+    #canvas {
+      display: block;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="canvas"></canvas>
+
+</body>
+
+<script>
+
+  //#region 手势
+  const action = {
+    Down: 'down',
+    Move: 'move',
+    Up: 'up',
+  }
+
+  class Pointer {
+    constructor(pointerId, pointerType, x, y, timestamp) {
+      this.pointerId = pointerId
+      this.pointerType = pointerType
+      this.x = x
+      this.y = y
+      this.timestamp = timestamp
+    }
+  }
+
+  class Vector2 {
+    constructor(x, y) {
+      this.x = x
+      this.y = y
+    }
+
+    length() {
+      return Math.sqrt(this.x * this.x + this.y * this.y)
+    }
+  }
+
+  class TouchControl {
+    constructor(translateThreshold = 100, scaleThreshold = 0.8, rotateThreshold = 30) {
+      this.translateThreshold = translateThreshold
+      this.scaleThreshold = scaleThreshold
+      this.rotateThreshold = rotateThreshold
+
+      this.isReachThreshold = false
+      this.activePointerDictionary = new Map()
+      this.pointerDictionary = new Map()
+      this.baseMatrix = new DOMMatrix()
+      this.matrix = new DOMMatrix()
+    }
+
+    onTouch(pointer) {
+      if (pointer.pointerType === action.Down && this.activePointerDictionary.size < 2) {
+        this.activePointerDictionary.set(pointer.pointerId, pointer)
+        this.pointerDictionary.set(pointer.pointerId, pointer)
+        // console.log('down', pointer.pointerId)
+        this.reset()
+      } else if (pointer.pointerType === action.Move) {
+        if (this.activePointerDictionary.has(pointer.pointerId)) {
+          // console.log('move', pointer.pointerId)
+          this.pointerDictionary.set(pointer.pointerId, pointer)
+        }
+      } else if (pointer.pointerType === action.Up) {
+        this.activePointerDictionary.delete(pointer.pointerId)
+        this.pointerDictionary.delete(pointer.pointerId)
+        this.reset()
+        if (this.activePointerDictionary.size === 0) {
+          this.isReachThreshold = false
+        }
+      }
+
+      const transformMatrix = this.getMatrix()
+      this.matrix = this.baseMatrix.multiply(transformMatrix)
+
+      return transformMatrix
+      return this.matrix
+    }
+
+    getMatrix() {
+      let transformMatrix = new DOMMatrix()
+
+      if (this.pointerDictionary.size === 1) {
+        transformMatrix = this.getMatrixFromSinglePointer([...this.activePointerDictionary.values()][0])
+        const translateLength = Math.sqrt(
+          transformMatrix.e * transformMatrix.e + transformMatrix.f * transformMatrix.f
+        )
+        if (!this.isReachThreshold && translateLength >= this.translateThreshold) {
+          this.isReachThreshold = true
+          for (const p of this.activePointerDictionary.values()) {
+            this.activePointerDictionary.set(p.pointerId, this.pointerDictionary.get(p.pointerId))
+          }
+          transformMatrix = this.getMatrix()
+        }
+      } else if (this.pointerDictionary.size >= 2) {
+        const pointers = this.getValidPointers3()
+        transformMatrix = this.getMatrixFromTwoPointers(pointers[0], pointers[1])
+
+        const translateLength = Math.sqrt(
+          transformMatrix.e * transformMatrix.e + transformMatrix.f * transformMatrix.f
+        )
+        const scale = Math.sqrt(transformMatrix.a * transformMatrix.a + transformMatrix.d * transformMatrix.d)
+        const deltaScale = Math.abs(scale - this.baseMatrix.a)
+        const rotation = Math.atan2(transformMatrix.c, transformMatrix.a)
+        const rotationDeg = Math.abs(rotation * (180 / Math.PI))
+
+        if (
+          !this.isReachThreshold &&
+          (translateLength >= this.translateThreshold ||
+            deltaScale >= this.scaleThreshold ||
+            rotationDeg >= this.rotateThreshold)
+        ) {
+          // console.log(`translateLength: ${translateLength}, deltaScale: ${deltaScale}, rotationDeg: ${rotationDeg}`)
+          this.isReachThreshold = true
+          for (const p of this.activePointerDictionary.values()) {
+            this.activePointerDictionary.set(p.pointerId, this.pointerDictionary.get(p.pointerId))
+          }
+          transformMatrix = this.getMatrix()
+        }
+      }
+
+      return this.isReachThreshold ? transformMatrix : new DOMMatrix()
+    }
+
+    getMatrixFromTwoPointers(pointer1, pointer2) {
+      const pi1 = this.activePointerDictionary.get(pointer1.pointerId)
+      const pi2 = this.activePointerDictionary.get(pointer2.pointerId)
+      const v1 = new Vector2(pi2.x - pi1.x, pi2.y - pi1.y)
+      // const v1 = new Vector2(pi1.x - pi2.x, pi1.y - pi2.y)
+
+      const p1 = this.pointerDictionary.get(pointer1.pointerId)
+      const p2 = this.pointerDictionary.get(pointer2.pointerId)
+      const v2 = new Vector2(p2.x - p1.x, p2.y - p1.y)
+      // const v2 = new Vector2(p1.x - p2.x, p1.y - p2.y)
+
+      const c1x = pi1.x + (pi2.x - pi1.x) / 2
+      const c1y = pi1.y + (pi2.y - pi1.y) / 2
+      const c2x = p1.x + (p2.x - p1.x) / 2
+      const c2y = p1.y + (p2.y - p1.y) / 2
+      const e = c2x - c1x
+      const f = c2y - c1y
+
+      let transformMatrix = this.getMatrixFromVectors(v1, v2)
+
+      // console.log('c1x, -c1y', c1x, c1y)
+      let matrix = new DOMMatrix([1, 0, 0, 1, c2x, c2y])
+      transformMatrix = matrix.multiply(transformMatrix)
+      transformMatrix = transformMatrix.translate(-c2x, -c2y)
+      transformMatrix = transformMatrix.translate(e, f)
+
+      return transformMatrix
+    }
+
+    getMatrixFromSinglePointer(pointer) {
+      const p1 = this.activePointerDictionary.get(pointer.pointerId)
+      const p2 = this.pointerDictionary.get(pointer.pointerId)
+
+      const e = p2.x - p1.x
+      const f = p2.y - p1.y
+      return new DOMMatrix([1, 0, 0, 1, e, f])
+    }
+
+    getMatrixFromVectors(v1, v2) {
+      const vectorLengthSquare = v1.x * v1.x + v1.y * v1.y
+      const dotProduct = v1.x * v2.x + v1.y * v2.y
+      const crossProduct = v1.x * v2.y - v1.y * v2.x
+
+      const a = dotProduct / vectorLengthSquare
+      const b = crossProduct / vectorLengthSquare
+      const c = -crossProduct / vectorLengthSquare
+      const d = dotProduct / vectorLengthSquare
+
+      return new DOMMatrix([a, b, c, d, 0, 0])
+    }
+
+    reset() {
+      for (const p of this.activePointerDictionary.values()) {
+        this.activePointerDictionary.set(p.pointerId, this.pointerDictionary.get(p.pointerId))
+      }
+      this.baseMatrix = new DOMMatrix(
+        [this.matrix.a,
+        this.matrix.b,
+        this.matrix.c,
+        this.matrix.d,
+        this.matrix.e,
+        this.matrix.f]
+      )
+    }
+
+    getValidPointers3() {
+      return [...this.activePointerDictionary.values()].slice(0, 2)
+    }
+  }
+  //#endregion
+  const touchControl = new TouchControl()
+
+  // 初始化画布
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  // 绘制测试矩形
+  const rect = {
+    x: canvas.width / 2 - 50,
+    y: canvas.height / 2 - 50,
+    width: 100,
+    height: 100
+  };
+
+  addPointerEvent(canvas)
+
+  // 初始绘制
+  let drawMatrix = new DOMMatrix()
+  draw();
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.save();
+    ctx.transform(drawMatrix.a, drawMatrix.b, drawMatrix.c, drawMatrix.d, drawMatrix.e, drawMatrix.f);
+    ctx.fillStyle = 'blue';
+    ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+    ctx.restore();
+  }
+
+  /**
+ * pointer 事件通用属性：
+ * pointerId: 唯一标识触发事件的指针。
+ * pointerType: 指针设备的类型（"mouse"、"pen" 或 "touch"）。
+ * isPrimary: 指针是否是主指针（例如，第一个触摸点）。
+ * clientX, clientY: 指针在视口中的坐标。
+ * pageX, pageY: 指针在页面中的坐标。
+ * screenX, screenY: 指针在屏幕中的坐标。
+ * offsetX, offsetY: 指针在目标元素中的坐标。
+ * button: 按下的鼠标按钮（0: 主按钮，1: 中键，2: 右键）。
+ * buttons: 按下的鼠标按钮的位掩码。
+ * ctrlKey, shiftKey, altKey, metaKey: 是否按下了 Ctrl、Shift、Alt 或 Meta 键。
+ */
+  function addPointerEvent(dom) {
+    dom.addEventListener('pointerdown', e => {
+      pointerHandle(e, action.Down)
+    });
+    dom.addEventListener('pointermove', e => {
+      pointerHandle(e, action.Move)
+    });
+    dom.addEventListener('pointerup', e => {
+      pointerHandle(e, action.Up)
+    });
+
+  }
+
+  function pointerHandle(e, pointerType) {
+    let pointer = new Pointer(e.pointerId, pointerType, e.pageX, e.pageY, e.timeStamp);
+
+    drawMatrix = touchControl.onTouch(pointer);
+    console.log('drawMatrix', drawMatrix.toString())
+    draw();
+  }
+
+</script>
+
+</html>
