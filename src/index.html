@@ -73,7 +73,7 @@
   }
 
   class TouchControl {
-    constructor(translateThreshold = 100, scaleThreshold = 0.8, rotateThreshold = 30) {
+    constructor(translateThreshold = 100, scaleThreshold = 5 / 4, rotateThreshold = 45) {
       this.translateThreshold = translateThreshold
       this.scaleThreshold = scaleThreshold
       this.rotateThreshold = rotateThreshold
@@ -106,10 +106,10 @@
       }
 
       const transformMatrix = this.getMatrix()
-      this.matrix = this.baseMatrix.multiply(transformMatrix)
 
-      return transformMatrix
-      return this.matrix
+      this.matrix = transformMatrix.multiply(this.baseMatrix)
+      // return this.matrix
+      return transformMatrix.multiply(this.baseMatrix)
     }
 
     getMatrix() {
@@ -120,7 +120,7 @@
         const translateLength = Math.sqrt(
           transformMatrix.e * transformMatrix.e + transformMatrix.f * transformMatrix.f
         )
-        if (!this.isReachThreshold && translateLength >= this.translateThreshold) {
+        if (!this.isReachThreshold && translateLength > this.translateThreshold) {
           this.isReachThreshold = true
           for (const p of this.activePointerDictionary.values()) {
             this.activePointerDictionary.set(p.pointerId, this.pointerDictionary.get(p.pointerId))
@@ -134,18 +134,16 @@
         const translateLength = Math.sqrt(
           transformMatrix.e * transformMatrix.e + transformMatrix.f * transformMatrix.f
         )
-        const scale = Math.sqrt(transformMatrix.a * transformMatrix.a + transformMatrix.d * transformMatrix.d)
-        const deltaScale = Math.abs(scale - this.baseMatrix.a)
+        const scale = Math.sqrt(transformMatrix.a * transformMatrix.a + transformMatrix.c * transformMatrix.c)
         const rotation = Math.atan2(transformMatrix.c, transformMatrix.a)
         const rotationDeg = Math.abs(rotation * (180 / Math.PI))
 
         if (
           !this.isReachThreshold &&
-          (translateLength >= this.translateThreshold ||
-            deltaScale >= this.scaleThreshold ||
-            rotationDeg >= this.rotateThreshold)
+          (translateLength > this.translateThreshold ||
+            scale > this.scaleThreshold || scale < 1 / this.scaleThreshold ||
+            rotationDeg > this.rotateThreshold)
         ) {
-          // console.log(`translateLength: ${translateLength}, deltaScale: ${deltaScale}, rotationDeg: ${rotationDeg}`)
           this.isReachThreshold = true
           for (const p of this.activePointerDictionary.values()) {
             this.activePointerDictionary.set(p.pointerId, this.pointerDictionary.get(p.pointerId))
@@ -223,7 +221,8 @@
     }
 
     getValidPointers3() {
-      return [...this.activePointerDictionary.values()].slice(0, 2)
+      let arr = [...this.activePointerDictionary.values()].slice(0, 2)
+      return [arr[0], arr[1]]
     }
   }
   //#endregion

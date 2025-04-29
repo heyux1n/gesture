@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Canvas 鼠标 & 手指绘制</title>
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      height: 100%;
+      display: flex;
+
+    }
+
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="drawingCanvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById('drawingCanvas');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // 鼠标绘制状态
+    const mouseState = {
+      isDrawing: false,
+      lastX: 0,
+      lastY: 0,
+      color: 'black',
+      lineWidth: 3
+    };
+
+    // 手指绘制状态
+    const touchState = {
+      isDrawing: false,
+      lastX: 0,
+      lastY: 0,
+      color: 'red',
+      lineWidth: 3
+    };
+    addTouchEvent()
+    addMouseEvent()
+
+
+    function addMouseEvent() {
+      // 鼠标事件
+      canvas.addEventListener('mousedown', (e) => {
+        mouseState.isDrawing = true;
+        mouseState.lastX = e.clientX;
+        mouseState.lastY = e.clientY;
+      });
+
+      canvas.addEventListener('mousemove', (e) => {
+        if (!mouseState.isDrawing) return;
+
+        ctx.strokeStyle = mouseState.color;
+        ctx.lineWidth = mouseState.lineWidth;
+        ctx.beginPath();
+        ctx.moveTo(mouseState.lastX, mouseState.lastY);
+        ctx.lineTo(e.clientX, e.clientY);
+        ctx.stroke();
+
+        mouseState.lastX = e.clientX;
+        mouseState.lastY = e.clientY;
+      });
+
+      canvas.addEventListener('mouseup', () => {
+        mouseState.isDrawing = false;
+      });
+
+      canvas1.addEventListener('mouseleave', () => {
+        mouseState.isDrawing = false;
+      });
+    }
+
+
+
+    function addTouchEvent() {
+
+      // 触摸事件
+      canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        touchState.isDrawing = true;
+        touchState.lastX = touch.clientX;
+        touchState.lastY = touch.clientY;
+      }, { passive: false });
+
+      canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        if (!touchState.isDrawing) return;
+        const touch = e.touches[0];
+
+        ctx.strokeStyle = touchState.color;
+        ctx.lineWidth = touchState.lineWidth;
+        ctx.beginPath();
+        ctx.moveTo(touchState.lastX, touchState.lastY);
+        ctx.lineTo(touch.clientX, touch.clientY);
+        ctx.stroke();
+
+        touchState.lastX = touch.clientX;
+        touchState.lastY = touch.clientY;
+      }, { passive: false });
+
+      canvas.addEventListener('touchend', () => {
+        touchState.isDrawing = false;
+      });
+
+      canvas.addEventListener('touchcancel', () => {
+        touchState.isDrawing = false;
+      });
+    }
+
+  </script>
+</body>
+
+</html>

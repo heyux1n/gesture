@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Canvas Drawing</title>
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      height: 100%;
+    }
+
+    canvas {
+      display: block;
+    }
+
+    #drawCanvas,
+    #drawCanvas2 {
+      position: absolute;
+    }
+  </style>
+</head>
+
+<body>
+
+  <canvas id="drawCanvas"></canvas>
+  <canvas id="drawCanvas2"></canvas>
+
+  <script>
+    // 与安卓做事件对接，安卓调用 webview 方法
+    function greet(...name) {
+      return "Hello, " + name;
+    }
+    function test(paramStr) {
+      let param = JSON.parse(paramStr)
+      return `Hello, ${param.pointerType}, ${param.type}, ${param.x}, ${param.y};`
+    }
+
+
+    const canvas = document.getElementById('drawCanvas');
+    const ctx = canvas.getContext('2d');
+    const canvas2 = document.getElementById('drawCanvas2');
+    const ctx2 = canvas.getContext('2d');
+
+    // 设置 canvas 尺寸为全屏
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      canvas2.width = window.innerWidth;
+      canvas2.height = window.innerHeight;
+
+      // 设置背景色
+      ctx.fillStyle = '#e0f7ff'; // 淡蓝色
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx2.fillStyle = '#e0f7ff'; // 淡蓝色
+      ctx2.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function drawLine(fromX, fromY, toX, toY, color) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+
+      ctx.beginPath();
+      ctx.moveTo(fromX, fromY);
+      ctx.lineTo(toX, toY);
+      ctx.stroke();
+    }
+
+    function drawLine2(fromX, fromY, toX, toY, color) {
+      ctx2.strokeStyle = color;
+      ctx2.lineWidth = 2;
+      ctx2.lineCap = 'round';
+      ctx2.beginPath();
+      ctx2.moveTo(fromX, fromY);
+      ctx2.lineTo(toX, toY);
+      ctx2.stroke();
+    }
+
+    // 鼠标状态
+    const penState = {
+      drawing: false,
+      lastX: 0,
+      lastY: 0,
+    };
+
+    // 触摸状态
+    const touchState = {
+      drawing: false,
+      lastX: 0,
+      lastY: 0,
+    };
+
+    // pointerType 2: pen
+    // type：0 down，1 up 2 move
+    function onPointer(paramStr) {
+      let param = JSON.parse(paramStr)
+      let pointerType = param.pointerType
+      let type = param.type
+      let x = param.x
+      let y = param.y
+      if (pointerType == 2) {
+        // pen
+        if (type == 0) {
+          // down
+          penState.drawing = true;
+          penState.lastX = x;
+          penState.lastY = y;
+
+        } else if (type == 2) {
+          // move
+          if (!penState.drawing) return;
+          drawLine2(penState.lastX, penState.lastY, x, y, 'blue');
+          penState.lastX = x;
+          penState.lastY = y;
+
+        } else if (type == 1) {
+          // up
+          penState.drawing = false;
+        }
+      } else {
+        if (type == 0) {
+          // down
+          touchState.drawing = true;
+          touchState.lastX = x;
+          touchState.lastY = y;
+
+        } else if (type == 2) {
+          // move
+          if (!touchState.drawing) return;
+          drawLine(touchState.lastX, touchState.lastY, x, y, 'blue');
+          touchState.lastX = x;
+          touchState.lastY = y;
+
+        } else if (type == 1) {
+          // up
+          touchState.drawing = false;
+        }
+      }
+    }
+
+
+    // // 鼠标状态
+    // const mouseState = {
+    //   drawing: false,
+    //   lastX: 0,
+    //   lastY: 0,
+    // };
+
+    // // 触摸状态
+    // const touchState = {
+    //   drawing: false,
+    //   lastX: 0,
+    //   lastY: 0,
+    // };
+
+    // function drawLine(fromX, fromY, toX, toY, color) {
+    //   ctx.strokeStyle = color;
+    //   ctx.lineWidth = 2;
+    //   ctx.lineCap = 'round';
+
+    //   ctx.beginPath();
+    //   ctx.moveTo(fromX, fromY);
+    //   ctx.lineTo(toX, toY);
+    //   ctx.stroke();
+    // }
+
+    // // Mouse Events
+    // canvas.addEventListener('mousedown', (e) => {
+    //   mouseState.drawing = true;
+    //   mouseState.lastX = e.clientX;
+    //   mouseState.lastY = e.clientY;
+    // });
+
+    // canvas.addEventListener('mousemove', (e) => {
+    //   if (!mouseState.drawing) return;
+    //   drawLine(mouseState.lastX, mouseState.lastY, e.clientX, e.clientY, 'black');
+    //   mouseState.lastX = e.clientX;
+    //   mouseState.lastY = e.clientY;
+    // });
+
+    // canvas.addEventListener('mouseup', () => {
+    //   mouseState.drawing = false;
+    // });
+
+    // canvas.addEventListener('mouseleave', () => {
+    //   mouseState.drawing = false;
+    // });
+
+    // // Touch Events
+    // canvas.addEventListener('touchstart', (e) => {
+    //   if (e.touches.length > 0) {
+    //     const touch = e.touches[0];
+    //     touchState.drawing = true;
+    //     touchState.lastX = touch.clientX;
+    //     touchState.lastY = touch.clientY;
+    //   }
+    // });
+
+    // canvas.addEventListener('touchmove', (e) => {
+    //   e.preventDefault(); // 阻止滚动
+    //   if (!touchState.drawing) return;
+
+    //   const touch = e.touches[0];
+    //   drawLine(touchState.lastX, touchState.lastY, touch.clientX, touch.clientY, 'blue');
+    //   touchState.lastX = touch.clientX;
+    //   touchState.lastY = touch.clientY;
+    // }, { passive: false });
+
+    // canvas.addEventListener('touchend', () => {
+    //   touchState.drawing = false;
+    // });
+  </script>
+</body>
+
+</html>
