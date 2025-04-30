@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    html {
+      width: 100%;
+      height: 100%;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      /* 禁用所有边界弹性效果 */
+      overscroll-behavior: none;
+
+      /* 禁用手势缩放、手势滑动 */
+      touch-action: none;
+    }
+
+    #content {
+      width: 100%;
+      height: 100%;
+      background-image: url('./assets/pdf.png');
+      transform-origin: 0, 0;
+      background-repeat: no-repeat;
+    }
+
+    #canvas {
+      display: block;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="canvas"></canvas>
+
+</body>
+
+<script type="module">
+  import PointerControl from './PointerControl.js'
+  import PointerListener from './PointerListener.js'
+
+  // 初始化画布
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  // 绘制测试矩形
+  const rect = {
+    x: canvas.width / 2 - 50,
+    y: canvas.height / 2 - 50,
+    width: 100,
+    height: 100
+  };
+
+  // 初始绘制
+  let drawMatrix = new DOMMatrix()
+  draw();
+  addEventListener();
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.save();
+    ctx.transform(drawMatrix.a, drawMatrix.b, drawMatrix.c, drawMatrix.d, drawMatrix.e, drawMatrix.f);
+    ctx.fillStyle = 'blue';
+    ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+    ctx.restore();
+  }
+
+
+  function addEventListener() {
+    console.log('addEventListener')
+    const pointerControl = new PointerControl()
+    const pointerListener = new PointerListener(canvas, pointerControl)
+
+    pointerListener.onPointerMove = (e) => {
+      console.log('onPointerDown', e)
+      pointerHandle(e)
+    }
+
+    function pointerHandle(e) {
+      let matrix = e.matrix
+      console.log([matrix[0], matrix[3], matrix[1], matrix[4], matrix[2], matrix[5]])
+      drawMatrix = new DOMMatrix([matrix[0], matrix[3], matrix[1], matrix[4], matrix[2], matrix[5]])
+      console.log('drawMatrix', drawMatrix.toString())
+      draw();
+    }
+  }
+
+
+
+
+</script>
+
+</html>

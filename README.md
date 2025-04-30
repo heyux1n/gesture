@@ -2,6 +2,22 @@
 
 鼠标及触控手势事件库
 
+
+
+## 项目结构
+
+
+
+1. pointer 目录
+
+   增加单独控制阈值的手势 matrix 计算
+
+   统一封装事件监听
+
+2. test 事件测试
+
+
+
 ## 方案
 
 > 给我一个手势库的方案，包括鼠标、手势的时间输入，在手势中支持多点。需要包含通用的手势场景，如单击、双击、拖动、滑动、双指缩放等
@@ -32,3 +48,4 @@
 https://developer.mozilla.org/en-US/docs/Web/API/Pointer_events/Using_Pointer_Events
 
 ## 手势全局转鼠标
+
